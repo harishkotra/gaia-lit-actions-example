@@ -13,7 +13,10 @@ const { LitContracts } = require("@lit-protocol/contracts-sdk");
 const fs = require("fs");
 const { ethers } = require("ethers");
 require("dotenv").config();
+
+// Read the Lit Action code that will contain the weather fetch logic
 const litActionCode = fs.readFileSync("litAction.js", "utf8");
+
 // Get environment variables
 const ETHEREUM_PRIVATE_KEY = process.env.ETHEREUM_PRIVATE_KEY;
 if (!ETHEREUM_PRIVATE_KEY) {
@@ -86,29 +89,12 @@ async function main() {
       ],
     });
 
-    // Fetch current temperature from weather API
-    const weatherResponse = await fetch(
-      "https://api.weather.gov/gridpoints/TOP/31,80/forecast"
-    );
-    const weatherData = await weatherResponse.json();
-    const currentTemp = weatherData.properties.periods[0].temperature;
-
-    // Prepare the signing message
-    const message = new Uint8Array(
-      await crypto.subtle.digest(
-        'SHA-256',
-        new TextEncoder().encode(`Temperature: ${currentTemp}°F`)
-      )
-    );
-
-    // Execute Lit Action
+    // Execute Lit Action - Weather fetch and signing happens inside the Lit Action
     console.log("🔄 Executing Lit Action...");
     const response = await litNodeClient.executeJs({
       sessionSigs,
       code: litActionCode,
       jsParams: {
-        temp: currentTemp,
-        toSign: message,
         publicKey: pkpInfo.publicKey,
         sigName: "weatherCheck"
       }
